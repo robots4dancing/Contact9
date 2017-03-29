@@ -10,7 +10,7 @@ import UIKit
 import Contacts
 import ContactsUI
 
-class ViewController: UIViewController, CNContactPickerDelegate {
+class ViewController: UIViewController, CNContactPickerDelegate, CNContactViewControllerDelegate, UINavigationControllerDelegate {
     
     var contactStore = CNContactStore()
     
@@ -41,6 +41,41 @@ class ViewController: UIViewController, CNContactPickerDelegate {
         
     }
     
+    //MARK: - Contact Editor Methods
+    
+    @IBOutlet var lastNameTextField :UITextField!
+    
+    @IBAction func showContactEditor(button: UIBarButtonItem) {
+        if let lastName = lastNameTextField.text {
+            presentContactMatching(lastName: lastName)
+        }
+    }
+    
+    func presentContactMatching(lastName: String) {
+        let predicate = CNContact.predicateForContacts(matchingName: lastName)
+        let keysToFetch = [CNContactViewController.descriptorForRequiredKeys()]
+        do {
+            let contacts = try contactStore.unifiedContacts(matching: predicate, keysToFetch: keysToFetch)
+            if let firstContact = contacts.first {
+                print("Contact: \(firstContact.givenName)")
+            }
+        } catch {
+            print("error")
+        }
+    }
+    
+    func displayContact(contact: CNContact) {
+        let contactVC = CNContactViewController(for: contact)
+        contactVC.contactStore = contactStore
+        contactVC.delegate = self
+        let navigationController = UINavigationController(rootViewController: contactVC)
+        present(navigationController, animated: true, completion: nil)
+    }
+    
+    func contactViewController(_ viewController: CNContactViewController, didCompleteWith contact: CNContact?) {
+        print("Editing Done for :\(contact!.familyName)")
+    }
+
     //MARK: - Authorization Methods
     
     func requestAccessToContactType(type: CNEntityType) {
